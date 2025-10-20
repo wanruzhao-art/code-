@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Ternary Survey — Today vs 2075</title>
+  <!-- Plotly for ternary plots -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    :root{--ring:#e5e7eb;--bg:#f8fafc;--muted:#6b7280}
+    *{box-sizing:border-box} body{margin:0;background:linear-gradient(#fff,var(--bg));font:15px/1.5 system-ui,Segoe UI,Inter,Arial}
+    .wrap{max-width:960px;margin:0 auto;padding:24px}
+    h1{margin:0 0 6px;font-size:22px} .muted{color:var(--muted)}
+    .card{background:#fff;border:1px solid var(--ring);border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.03);margin-top:14px}
+    .body{padding:16px}
+    .row{display:grid;gap:14px} .row.cols-2{grid-template-columns:1fr 1fr}
+    .bar{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{border:1px solid var(--ring);background:#fff;border-radius:999px;padding:9px 14px;font-weight:600;cursor:pointer}
+    .btn.primary{background:#111827;color:#fff;border-color:#111827}
+    .btn.active{outline:2px solid #11182710}
+    input[type="text"],input[type="url"]{width:100%;padding:10px 12px;border:1px solid var(--ring);border-radius:10px}
+    #plot{width:100%;height:460px}
+    .help{font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start">
+      <div>
+        <h1>Ternary Survey: Today vs 2075</h1>
+        <div class="muted">Place dots for <b>Today</b> and <b>2075</b> across
+          <b>Economic Prosperity</b>, <b>Social Equity</b>, and <b>Individual Autonomy</b>. A+B+C=100%.</div>
+      </div>
+      <div class="bar" role="group" aria-label="Active point">
+        <button id="btnToday" class="btn active">Set with clicks: Today</button>
+        <button id="btnFuture" class="btn">2075</button>
+      </div>
+    </header>
+
+    <div class="card"><div class="body">
+      <div id="plot" aria-label="Ternary plot"></div>
+      <div class="help">Click inside the triangle to place the currently selected point (Today or 2075). Click again to move it.</div>
+    </div></div>
+
+    <div class="card"><div class="body">
+      <h3 style="margin:0 0 10px">Save & Submit</h3>
+      <div class="row cols-2">
+        <div>
+          <label>Respondent ID (optional)</label>
+          <input id="respId" type="text" placeholder="e.g., anon-001">
+        </div>
+        <div>
+          <label>Webhook URL (optional)</label>
+          <input id="webhook" type="url" placeholder="Paste Google Apps Script Web App URL or other endpoint">
+          <div class="help">If set, clicking “Submit response” POSTs JSON to this URL.</div>
+        </div>
+      </div>
+      <div class="bar" style="margin-top:10px">
+        <button id="btnSubmit" class="btn primary">Submit response</button>
+        <button id="btnDownload" class="btn">Download CSV (local)</button>
+        <button id="btnReset" class="btn">Reset points</button>
+        <span id="status" class="help" aria-live="polite"></span>
+      </div>
+    </div></div>
+
+    <p class="help">Axes: A = Economic Prosperity, B = Social Equity, C = Individual Autonomy.</p>
+  </div>
+
+  <script>
+    // ---------------- State ----------------
+    const A_LABEL = "Economic Prosperity";
+    const B_LABEL = "Social Equity";
+    const C_LABEL = "Individual Autonomy";
+
+    let active = "today"; // or "future"
+    let today  = { a:33.33, b:33.33, c:33.34 };
+    let future = { a:33.33, b:33.33, c:33.34 };
+    let responses = [];
+
+    const round2 = x => Math.round((x + Number.EPSILON) * 100) / 100;
+    const clamp  = x => Math.max(0, Math.min(100, Number.isFinite(x) ? x : 0));
+
+    function setFromAB(target, a, b){
+      const aa = clamp(a);
+      const bb = clamp(Math.min(b, 100 - aa));
+      target.a = round2(aa);
+      target.b = round2(bb);
+      target.c = round2(100 - target.a - target.b);
+    }
+
+    // ---------------- Plot ----------------
+    const layout = {
+      margin:{l:20,r:20,t:20,b:20},
+      ternary:{
+        sum:100,
+        aaxis:{ title:A_LABEL, min:0, ticksuffix:"%" },
+        baxis:{ title:B_LABEL, min:0, ticksuffix:"%" },
+        caxis:{ title:C_LABEL, min:0, ticksuffix:"%" },
+        bgcolor:"rgba(0,0,0,0)"
+      },
+      legend:{orientation:"h", x:0.5, xanchor:"center", y:-0.1},
+      paper_bgcolor:"rgba(0,0,0,0)",
+      showlegend:true
+    };
+
+    function traces(){
+      return [
+        { type:"scatterternary", mode:"markers",
+          a:[today.a], b:[today.b], c:[today.c],
+          name:"Today", marker:{size:12, symbol:"circle"},
+          hovertemplate:`${A_LABEL}: %{a:.2f}%<br>${B_LABEL}: %{b:.2f}%<br>${C_LABEL}: %{c:.2f}%<extra>Today</extra>`
+        },
+        { type:"scatterternary", mode:"markers",
+          a:[future.a], b:[future.b], c:[future.c],
+          name:"2075", marker:{size:12, symbol:"diamond"},
+          hovertemplate:`${A_LABEL}: %{a:.2f}%<br>${B_LABEL}: %{b:.2f}%<br>${C_LABEL}: %{c:.2f}%<extra>2075</extra>`
+        },
+        { type:"scatterternary", mode:"lines",
+          a:[today.a, future.a], b:[today.b, future.b], c:[today.c, future.c],
+          name:"Change", hoverinfo:"skip", line:{width:2}
+        }
+      ];
+    }
+
+    function draw(){
+      Plotly.react("plot", traces(), layout, {responsive:true, displayModeBar:true});
+    }
+
+    function onPlotClick(evt){
+      const p = evt?.points?.[0];
+      if(!p) return;
+      const a = round2(p.a ?? 0), b = round2(p.b ?? 0);
+      if(active === "today") setFromAB(today, a, b);
+      else                   setFromAB(future, a, b);
+      draw();
+    }
+
+    // ---------------- CSV & Submit ----------------
+    function toCSV(rows){
+      const header = ["response_id","timestamp_iso","today_a","today_b","today_c","future_a","future_b","future_c"];
+      const lines = [header.join(",")];
+      rows.forEach(r=>{
+        lines.push([JSON.stringify(r.id||""), r.ts, r.today.a, r.today.b, r.today.c, r.future.a, r.future.b, r.future.c].join(","));
+      });
+      return lines.join("\n");
+    }
+
+    function downloadCSV(){
+      const blob = new Blob([toCSV(responses)], {type:"text/csv;charset=utf-8;"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `ternary_responses_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function submit(){
+      const id = document.getElementById("respId").value || crypto.randomUUID();
+      const record = { id, ts:new Date().toISOString(), today:{...today}, future:{...future} };
+      responses.push(record);
+
+      const status = document.getElementById("status");
+      status.textContent = "Saved locally";
+
+      const url = document.getElementById("webhook").value.trim();
+      if(url){
+        try{
+          await fetch(url, {
+            method:"POST",
+            headers:{ "Content-Type":"application/json" },
+            body: JSON.stringify(record),
+            mode: "no-cors" // keeps it simple for Google Apps Script; remove if your endpoint has CORS
+          });
+          status.textContent = "Submitted to webhook";
+        }catch(e){
+          console.warn(e);
+          status.textContent = "Submit failed (saved locally)";
+        }
+      }
+    }
+
+    function resetPoints(){
+      today = { a:33.33, b:33.33, c:33.34 };
+      future = { a:33.33, b:33.33, c:33.34 };
+      draw();
+    }
+
+    // ---------------- Init ----------------
+    function init(){
+      draw();
+      const plotEl = document.getElementById("plot");
+      plotEl.on("plotly_click", onPlotClick);
+
+      const btnToday = document.getElementById("btnToday");
+      const btnFuture = document.getElementById("btnFuture");
+      btnToday.onclick = ()=>{ active="today"; btnToday.classList.add("active"); btnFuture.classList.remove("active"); };
+      btnFuture.onclick = ()=>{ active="future"; btnFuture.classList.add("active"); btnToday.classList.remove("active"); };
+
+      document.getElementById("btnSubmit").onclick = submit;
+      document.getElementById("btnDownload").onclick = downloadCSV;
+      document.getElementById("btnReset").onclick = resetPoints;
+    }
+    document.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>
