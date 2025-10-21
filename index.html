@@ -14,13 +14,15 @@
     .card{background:#fff;border:1px solid var(--ring);border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.03);margin-top:14px}
     .body{padding:16px}
     .row{display:grid;gap:14px} .row.cols-2{grid-template-columns:1fr 1fr}
+    .row.cols-3{grid-template-columns:repeat(3,1fr)}
     .bar{display:flex;gap:8px;flex-wrap:wrap}
     .btn{border:1px solid var(--ring);background:#fff;border-radius:999px;padding:9px 14px;font-weight:600;cursor:pointer}
     .btn.primary{background:#111827;color:#fff;border-color:#111827}
     .btn.active{outline:2px solid #11182710}
-    input[type="text"],input[type="url"]{width:100%;padding:10px 12px;border:1px solid var(--ring);border-radius:10px}
+    input[type="text"],input[type="url"],input[type="number"]{width:100%;padding:10px 12px;border:1px solid var(--ring);border-radius:10px}
     #plot{width:100%;height:460px}
     .help{font-size:12px;color:var(--muted)}
+    label{font-weight:600}
   </style>
 </head>
 <body>
@@ -39,7 +41,51 @@
 
     <div class="card"><div class="body">
       <div id="plot" aria-label="Ternary plot"></div>
-      <div class="help">Click inside the triangle to place the currently selected point (Today or 2075). Click again to move it.</div>
+      <div class="help">Click inside the triangle to place the selected point (Today or 2075). Click again to move it.</div>
+    </div></div>
+
+    <!-- NEW: Numeric inputs for Today -->
+    <div class="card"><div class="body">
+      <h3 style="margin:0 0 10px">Today — enter percentages (A+B+C=100)</h3>
+      <div class="row cols-3">
+        <div>
+          <label for="todayA_num">Economic Prosperity (A)</label>
+          <input id="todayA_num" type="number" min="0" max="100" step="0.25" placeholder="0–100">
+          <div class="help">Adjusting A will auto-balance C.</div>
+        </div>
+        <div>
+          <label for="todayB_num">Social Equity (B)</label>
+          <input id="todayB_num" type="number" min="0" max="100" step="0.25" placeholder="0–100">
+          <div class="help">Adjusting B will auto-balance C.</div>
+        </div>
+        <div>
+          <label for="todayC_num">Individual Autonomy (C)</label>
+          <input id="todayC_num" type="number" min="0" max="100" step="0.25" placeholder="0–100">
+          <div class="help">Adjusting C will auto-balance B.</div>
+        </div>
+      </div>
+    </div></div>
+
+    <!-- NEW: Numeric inputs for 2075 -->
+    <div class="card"><div class="body">
+      <h3 style="margin:0 0 10px">2075 — enter percentages (A+B+C=100)</h3>
+      <div class="row cols-3">
+        <div>
+          <label for="futureA_num">Economic Prosperity (A)</label>
+          <input id="futureA_num" type="number" min="0" max="100" step="0.25" placeholder="0–100">
+          <div class="help">Adjusting A will auto-balance C.</div>
+        </div>
+        <div>
+          <label for="futureB_num">Social Equity (B)</label>
+          <input id="futureB_num" type="number" min="0" max="100" step="0.25" placeholder="0–100">
+          <div class="help">Adjusting B will auto-balance C.</div>
+        </div>
+        <div>
+          <label for="futureC_num">Individual Autonomy (C)</label>
+          <input id="futureC_num" type="number" min="0" max="100" step="0.25" placeholder="0–100">
+          <div class="help">Adjusting C will auto-balance B.</div>
+        </div>
+      </div>
     </div></div>
 
     <div class="card"><div class="body">
@@ -88,6 +134,29 @@
       target.c = round2(100 - target.a - target.b);
     }
 
+    // NEW: update by changing exactly one field and auto-balancing another to keep sum=100
+    function applyABCChange(target, changedKey, newVal){
+      let a = target.a, b = target.b, c = target.c;
+      if (changedKey === "a") {
+        a = clamp(newVal);
+        // keep B, recompute C
+        b = clamp(Math.min(b, 100 - a));
+        c = round2(100 - a - b);
+      } else if (changedKey === "b") {
+        b = clamp(newVal);
+        // keep A, recompute C
+        a = clamp(Math.min(a, 100 - b));
+        c = round2(100 - a - b);
+      } else if (changedKey === "c") {
+        c = clamp(newVal);
+        // keep A, recompute B
+        a = clamp(a);
+        b = round2(100 - a - c);
+        if (b < 0) { b = 0; c = round2(100 - a); }
+      }
+      target.a = round2(a); target.b = round2(b); target.c = round2(c);
+    }
+
     // ---------------- Plot ----------------
     const layout = {
       margin:{l:20,r:20,t:20,b:20},
@@ -124,6 +193,7 @@
 
     function draw(){
       Plotly.react("plot", traces(), layout, {responsive:true, displayModeBar:true});
+      syncInputs();
     }
 
     function onPlotClick(evt){
@@ -133,6 +203,41 @@
       if(active === "today") setFromAB(today, a, b);
       else                   setFromAB(future, a, b);
       draw();
+    }
+
+    // ---------------- Inputs sync ----------------
+    function syncInputs(){
+      // Today
+      document.getElementById("todayA_num").value = today.a;
+      document.getElementById("todayB_num").value = today.b;
+      document.getElementById("todayC_num").value = today.c;
+      // Future
+      document.getElementById("futureA_num").value = future.a;
+      document.getElementById("futureB_num").value = future.b;
+      document.getElementById("futureC_num").value = future.c;
+    }
+
+    function wireABC(prefix, point){
+      const A = document.getElementById(prefix+"A_num");
+      const B = document.getElementById(prefix+"B_num");
+      const C = document.getElementById(prefix+"C_num");
+
+      const handle = (key) => (e) => {
+        const v = parseFloat(e.target.value);
+        if (Number.isFinite(v)) {
+          applyABCChange(point, key, v);
+          draw();
+        }
+      };
+
+      A.addEventListener("change", handle("a"));
+      B.addEventListener("change", handle("b"));
+      C.addEventListener("change", handle("c"));
+
+      // Also update live as they type (optional but nice)
+      A.addEventListener("input", handle("a"));
+      B.addEventListener("input", handle("b"));
+      C.addEventListener("input", handle("c"));
     }
 
     // ---------------- CSV & Submit ----------------
@@ -168,7 +273,7 @@
             method:"POST",
             headers:{ "Content-Type":"application/json" },
             body: JSON.stringify(record),
-            mode: "no-cors" // keeps it simple for Google Apps Script; remove if your endpoint has CORS
+            mode: "no-cors" // simple for Google Apps Script; remove if your endpoint supports CORS responses
           });
           status.textContent = "Submitted to webhook";
         }catch(e){
@@ -198,6 +303,11 @@
       document.getElementById("btnSubmit").onclick = submit;
       document.getElementById("btnDownload").onclick = downloadCSV;
       document.getElementById("btnReset").onclick = resetPoints;
+
+      // wire inputs
+      wireABC("today", today);
+      wireABC("future", future);
+      syncInputs();
     }
     document.addEventListener("DOMContentLoaded", init);
   </script>
