@@ -4,7 +4,6 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Ternary Survey — Today vs 2075</title>
-  <!-- Plotly for ternary plots -->
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <style>
     :root{--ring:#e5e7eb;--bg:#f8fafc;--muted:#6b7280}
@@ -30,8 +29,10 @@
     <header style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start">
       <div>
         <h1>Ternary Survey: Today vs 2075</h1>
-        <div class="muted">Place dots for <b>Today</b> and <b>2075</b> across
-          <b>Economic Prosperity</b>, <b>Social Equity</b>, and <b>Individual Autonomy</b>. A+B+C=100%.</div>
+        <div class="muted">
+          Place dots for <b>Today</b> and <b>2075</b> across
+          <b>Economic Prosperity</b>, <b>Social Equity</b>, and <b>Individual Autonomy</b>. A + B + C = 100%.
+        </div>
       </div>
       <div class="bar" role="group" aria-label="Active point">
         <button id="btnToday" class="btn active">Set with clicks: Today</button>
@@ -44,61 +45,57 @@
       <div class="help">Click inside the triangle to place the selected point (Today or 2075). Click again to move it.</div>
     </div></div>
 
-    <!-- NEW: Numeric inputs for Today -->
+    <!-- Numeric inputs for Today -->
     <div class="card"><div class="body">
-      <h3 style="margin:0 0 10px">Today — enter percentages (A+B+C=100)</h3>
+      <h3>Today — enter percentages (A + B + C = 100)</h3>
       <div class="row cols-3">
         <div>
-          <label for="todayA_num">Economic Prosperity (A)</label>
-          <input id="todayA_num" type="number" min="0" max="100" step="0.25" placeholder="0–100">
-          <div class="help">Adjusting A will auto-balance C.</div>
+          <label>Economic Prosperity (A)</label>
+          <input id="todayA_num" type="number" min="0" max="100" step="0.25">
         </div>
         <div>
-          <label for="todayB_num">Social Equity (B)</label>
-          <input id="todayB_num" type="number" min="0" max="100" step="0.25" placeholder="0–100">
-          <div class="help">Adjusting B will auto-balance C.</div>
+          <label>Social Equity (B)</label>
+          <input id="todayB_num" type="number" min="0" max="100" step="0.25">
         </div>
         <div>
-          <label for="todayC_num">Individual Autonomy (C)</label>
-          <input id="todayC_num" type="number" min="0" max="100" step="0.25" placeholder="0–100">
-          <div class="help">Adjusting C will auto-balance B.</div>
+          <label>Individual Autonomy (C)</label>
+          <input id="todayC_num" type="number" min="0" max="100" step="0.25">
         </div>
       </div>
     </div></div>
 
-    <!-- NEW: Numeric inputs for 2075 -->
+    <!-- Numeric inputs for 2075 -->
     <div class="card"><div class="body">
-      <h3 style="margin:0 0 10px">2075 — enter percentages (A+B+C=100)</h3>
+      <h3>2075 — enter percentages (A + B + C = 100)</h3>
       <div class="row cols-3">
         <div>
-          <label for="futureA_num">Economic Prosperity (A)</label>
-          <input id="futureA_num" type="number" min="0" max="100" step="0.25" placeholder="0–100">
-          <div class="help">Adjusting A will auto-balance C.</div>
+          <label>Economic Prosperity (A)</label>
+          <input id="futureA_num" type="number" min="0" max="100" step="0.25">
         </div>
         <div>
-          <label for="futureB_num">Social Equity (B)</label>
-          <input id="futureB_num" type="number" min="0" max="100" step="0.25" placeholder="0–100">
-          <div class="help">Adjusting B will auto-balance C.</div>
+          <label>Social Equity (B)</label>
+          <input id="futureB_num" type="number" min="0" max="100" step="0.25">
         </div>
         <div>
-          <label for="futureC_num">Individual Autonomy (C)</label>
-          <input id="futureC_num" type="number" min="0" max="100" step="0.25" placeholder="0–100">
-          <div class="help">Adjusting C will auto-balance B.</div>
+          <label>Individual Autonomy (C)</label>
+          <input id="futureC_num" type="number" min="0" max="100" step="0.25">
         </div>
       </div>
     </div></div>
 
     <div class="card"><div class="body">
-      <h3 style="margin:0 0 10px">Save & Submit</h3>
+      <h3>Save & Submit</h3>
       <div class="row cols-2">
         <div>
           <label>Respondent ID (optional)</label>
           <input id="respId" type="text" placeholder="e.g., anon-001">
         </div>
         <div>
-          <label>Webhook URL (optional)</label>
-          <input id="webhook" type="url" placeholder="Paste Google Apps Script Web App URL or other endpoint">
-          <div class="help">If set, clicking “Submit response” POSTs JSON to this URL.</div>
+          <label>Webhook URL</label>
+          <input id="webhook" type="url"
+            value="https://script.google.com/macros/s/AKfycbw3xaSY3Q6pGo66hiTKOFtxImpolPMt04u30I1gQ8zUqDuxXCtbVCRFn7LJQEmzx5-v/exec"
+            readonly>
+          <div class="help">This is pre-connected to your Google Sheet. You don’t need to paste it again.</div>
         </div>
       </div>
       <div class="bar" style="margin-top:10px">
@@ -118,7 +115,7 @@
     const B_LABEL = "Social Equity";
     const C_LABEL = "Individual Autonomy";
 
-    let active = "today"; // or "future"
+    let active = "today";
     let today  = { a:33.33, b:33.33, c:33.34 };
     let future = { a:33.33, b:33.33, c:33.34 };
     let responses = [];
@@ -134,182 +131,91 @@
       target.c = round2(100 - target.a - target.b);
     }
 
-    // NEW: update by changing exactly one field and auto-balancing another to keep sum=100
     function applyABCChange(target, changedKey, newVal){
       let a = target.a, b = target.b, c = target.c;
       if (changedKey === "a") {
-        a = clamp(newVal);
-        // keep B, recompute C
-        b = clamp(Math.min(b, 100 - a));
-        c = round2(100 - a - b);
+        a = clamp(newVal); b = clamp(Math.min(b, 100 - a)); c = round2(100 - a - b);
       } else if (changedKey === "b") {
-        b = clamp(newVal);
-        // keep A, recompute C
-        a = clamp(Math.min(a, 100 - b));
-        c = round2(100 - a - b);
+        b = clamp(newVal); a = clamp(Math.min(a, 100 - b)); c = round2(100 - a - b);
       } else if (changedKey === "c") {
-        c = clamp(newVal);
-        // keep A, recompute B
-        a = clamp(a);
-        b = round2(100 - a - c);
-        if (b < 0) { b = 0; c = round2(100 - a); }
+        c = clamp(newVal); a = clamp(a); b = round2(100 - a - c); if (b < 0){b=0; c=round2(100-a);}
       }
       target.a = round2(a); target.b = round2(b); target.c = round2(c);
     }
 
-    // ---------------- Plot ----------------
     const layout = {
       margin:{l:20,r:20,t:20,b:20},
-      ternary:{
-        sum:100,
-        aaxis:{ title:A_LABEL, min:0, ticksuffix:"%" },
-        baxis:{ title:B_LABEL, min:0, ticksuffix:"%" },
-        caxis:{ title:C_LABEL, min:0, ticksuffix:"%" },
-        bgcolor:"rgba(0,0,0,0)"
-      },
-      legend:{orientation:"h", x:0.5, xanchor:"center", y:-0.1},
-      paper_bgcolor:"rgba(0,0,0,0)",
-      showlegend:true
+      ternary:{sum:100,aaxis:{title:A_LABEL,min:0,ticksuffix:"%"},baxis:{title:B_LABEL,min:0,ticksuffix:"%"},caxis:{title:C_LABEL,min:0,ticksuffix:"%"},bgcolor:"rgba(0,0,0,0)"},
+      legend:{orientation:"h",x:0.5,xanchor:"center",y:-0.1},
+      paper_bgcolor:"rgba(0,0,0,0)",showlegend:true
     };
 
     function traces(){
       return [
-        { type:"scatterternary", mode:"markers",
-          a:[today.a], b:[today.b], c:[today.c],
-          name:"Today", marker:{size:12, symbol:"circle"},
-          hovertemplate:`${A_LABEL}: %{a:.2f}%<br>${B_LABEL}: %{b:.2f}%<br>${C_LABEL}: %{c:.2f}%<extra>Today</extra>`
-        },
-        { type:"scatterternary", mode:"markers",
-          a:[future.a], b:[future.b], c:[future.c],
-          name:"2075", marker:{size:12, symbol:"diamond"},
-          hovertemplate:`${A_LABEL}: %{a:.2f}%<br>${B_LABEL}: %{b:.2f}%<br>${C_LABEL}: %{c:.2f}%<extra>2075</extra>`
-        },
-        { type:"scatterternary", mode:"lines",
-          a:[today.a, future.a], b:[today.b, future.b], c:[today.c, future.c],
-          name:"Change", hoverinfo:"skip", line:{width:2}
-        }
+        {type:"scatterternary",mode:"markers",a:[today.a],b:[today.b],c:[today.c],name:"Today",marker:{size:12,symbol:"circle"}},
+        {type:"scatterternary",mode:"markers",a:[future.a],b:[future.b],c:[future.c],name:"2075",marker:{size:12,symbol:"diamond"}},
+        {type:"scatterternary",mode:"lines",a:[today.a,future.a],b:[today.b,future.b],c:[today.c,future.c],name:"Change",hoverinfo:"skip",line:{width:2}}
       ];
     }
 
-    function draw(){
-      Plotly.react("plot", traces(), layout, {responsive:true, displayModeBar:true});
-      syncInputs();
-    }
+    function draw(){Plotly.react("plot",traces(),layout,{responsive:true});syncInputs();}
 
     function onPlotClick(evt){
-      const p = evt?.points?.[0];
-      if(!p) return;
-      const a = round2(p.a ?? 0), b = round2(p.b ?? 0);
-      if(active === "today") setFromAB(today, a, b);
-      else                   setFromAB(future, a, b);
+      const p = evt?.points?.[0]; if(!p) return;
+      const a=round2(p.a??0), b=round2(p.b??0);
+      if(active==="today") setFromAB(today,a,b); else setFromAB(future,a,b);
       draw();
     }
 
-    // ---------------- Inputs sync ----------------
     function syncInputs(){
-      // Today
-      document.getElementById("todayA_num").value = today.a;
-      document.getElementById("todayB_num").value = today.b;
-      document.getElementById("todayC_num").value = today.c;
-      // Future
-      document.getElementById("futureA_num").value = future.a;
-      document.getElementById("futureB_num").value = future.b;
-      document.getElementById("futureC_num").value = future.c;
+      document.getElementById("todayA_num").value=today.a;
+      document.getElementById("todayB_num").value=today.b;
+      document.getElementById("todayC_num").value=today.c;
+      document.getElementById("futureA_num").value=future.a;
+      document.getElementById("futureB_num").value=future.b;
+      document.getElementById("futureC_num").value=future.c;
     }
 
     function wireABC(prefix, point){
-      const A = document.getElementById(prefix+"A_num");
-      const B = document.getElementById(prefix+"B_num");
-      const C = document.getElementById(prefix+"C_num");
-
-      const handle = (key) => (e) => {
-        const v = parseFloat(e.target.value);
-        if (Number.isFinite(v)) {
-          applyABCChange(point, key, v);
-          draw();
-        }
-      };
-
-      A.addEventListener("change", handle("a"));
-      B.addEventListener("change", handle("b"));
-      C.addEventListener("change", handle("c"));
-
-      // Also update live as they type (optional but nice)
-      A.addEventListener("input", handle("a"));
-      B.addEventListener("input", handle("b"));
-      C.addEventListener("input", handle("c"));
+      ["A","B","C"].forEach(k=>{
+        const el=document.getElementById(prefix+k+"_num");
+        el.addEventListener("input",()=>{const v=parseFloat(el.value);if(Number.isFinite(v)){applyABCChange(point,k.toLowerCase(),v);draw();}});
+      });
     }
 
-    // ---------------- CSV & Submit ----------------
     function toCSV(rows){
-      const header = ["response_id","timestamp_iso","today_a","today_b","today_c","future_a","future_b","future_c"];
-      const lines = [header.join(",")];
-      rows.forEach(r=>{
-        lines.push([JSON.stringify(r.id||""), r.ts, r.today.a, r.today.b, r.today.c, r.future.a, r.future.b, r.future.c].join(","));
-      });
+      const h=["response_id","timestamp_iso","today_a","today_b","today_c","future_a","future_b","future_c"];
+      const lines=[h.join(",")];
+      rows.forEach(r=>lines.push([r.id,r.ts,r.today.a,r.today.b,r.today.c,r.future.a,r.future.b,r.future.c].join(",")));
       return lines.join("\n");
     }
 
     function downloadCSV(){
-      const blob = new Blob([toCSV(responses)], {type:"text/csv;charset=utf-8;"});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = `ternary_responses_${new Date().toISOString().slice(0,10)}.csv`; a.click();
-      URL.revokeObjectURL(url);
+      const blob=new Blob([toCSV(responses)],{type:"text/csv"});const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");a.href=url;a.download="responses.csv";a.click();URL.revokeObjectURL(url);
     }
 
     async function submit(){
-      const id = document.getElementById("respId").value || crypto.randomUUID();
-      const record = { id, ts:new Date().toISOString(), today:{...today}, future:{...future} };
-      responses.push(record);
-
-      const status = document.getElementById("status");
-      status.textContent = "Saved locally";
-
-      const url = document.getElementById("webhook").value.trim();
-      if(url){
-        try{
-          await fetch(url, {
-            method:"POST",
-            headers:{ "Content-Type":"application/json" },
-            body: JSON.stringify(record),
-            mode: "no-cors" // simple for Google Apps Script; remove if your endpoint supports CORS responses
-          });
-          status.textContent = "Submitted to webhook";
-        }catch(e){
-          console.warn(e);
-          status.textContent = "Submit failed (saved locally)";
-        }
-      }
+      const id=document.getElementById("respId").value||crypto.randomUUID();
+      const record={id,ts:new Date().toISOString(),today:{...today},future:{...future}};responses.push(record);
+      const status=document.getElementById("status");status.textContent="Saved locally";
+      const url=document.getElementById("webhook").value.trim();
+      if(url){try{await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(record),mode:"no-cors"});status.textContent="Submitted to webhook";}catch(e){status.textContent="Submit failed";}}
     }
 
-    function resetPoints(){
-      today = { a:33.33, b:33.33, c:33.34 };
-      future = { a:33.33, b:33.33, c:33.34 };
-      draw();
-    }
+    function resetPoints(){today={a:33.33,b:33.33,c:33.34};future={a:33.33,b:33.33,c:33.34};draw();}
 
-    // ---------------- Init ----------------
     function init(){
       draw();
-      const plotEl = document.getElementById("plot");
-      plotEl.on("plotly_click", onPlotClick);
-
-      const btnToday = document.getElementById("btnToday");
-      const btnFuture = document.getElementById("btnFuture");
-      btnToday.onclick = ()=>{ active="today"; btnToday.classList.add("active"); btnFuture.classList.remove("active"); };
-      btnFuture.onclick = ()=>{ active="future"; btnFuture.classList.add("active"); btnToday.classList.remove("active"); };
-
-      document.getElementById("btnSubmit").onclick = submit;
-      document.getElementById("btnDownload").onclick = downloadCSV;
-      document.getElementById("btnReset").onclick = resetPoints;
-
-      // wire inputs
-      wireABC("today", today);
-      wireABC("future", future);
-      syncInputs();
+      document.getElementById("plot").on("plotly_click",onPlotClick);
+      document.getElementById("btnToday").onclick=()=>{active="today";btnToday.classList.add("active");btnFuture.classList.remove("active");};
+      document.getElementById("btnFuture").onclick=()=>{active="future";btnFuture.classList.add("active");btnToday.classList.remove("active");};
+      document.getElementById("btnSubmit").onclick=submit;
+      document.getElementById("btnDownload").onclick=downloadCSV;
+      document.getElementById("btnReset").onclick=resetPoints;
+      wireABC("today",today);wireABC("future",future);
     }
-    document.addEventListener("DOMContentLoaded", init);
+    document.addEventListener("DOMContentLoaded",init);
   </script>
 </body>
 </html>
